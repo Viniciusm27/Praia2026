@@ -8,11 +8,9 @@
       "sizes": "512x512"
     }
   ],
-  "id": "/Praia2026/",
-  "start_url": "/Praia2026/",
-  "scope": "/Praia2026/",
+  "start_url": "./index.html",
   "display": "standalone",
-  "theme_color": "#1e1b4b",
-  "background_color": "#ff7e5f",
+  "theme_color": "#2e1065",
+  "background_color": "#1e1b4b",
   "orientation": "portrait"
 }
