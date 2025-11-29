@@ -13,10 +13,8 @@ import {
   Play,
   Square,
   RefreshCw,
-  Users,
   GlassWater,
   AlertTriangle,
-  Settings,
   Mic,
   Wine,
   Sparkles,
@@ -24,7 +22,7 @@ import {
 } from "lucide-react";
 
 // ==================================================================
-// CONFIGURAÇÃO DO FIREBASE
+// CONFIGURAÇÃO DO FIREBASE (MANTENHA SUAS CHAVES AQUI!)
 // ==================================================================
 const firebaseConfig = {
   apiKey: "AIzaSyDL8oRGiBuz6qFEoj0F76c4_JhjtafRgEQ", // Cole sua API Key aqui
@@ -35,11 +33,9 @@ const firebaseConfig = {
   appId: "1:393183104266:web:55f1ee8fca3f0f34cc3ef3", // <--- MANTENHA SUAS CHAVES AQUI
 };
 
-// ==================================================================
-// INICIALIZAÇÃO
-// ==================================================================
 const isConfigured = firebaseConfig.apiKey.length > 0;
 
+// Variáveis globais para evitar recriação
 let app: any;
 let auth: any;
 let db: any;
@@ -55,6 +51,25 @@ if (isConfigured) {
     console.error("Erro ao iniciar Firebase:", error);
   }
 }
+
+// ==================================================================
+// COMPONENTE DE SPLASH SCREEN (CARREGAMENTO)
+// ==================================================================
+// Este componente imita a tela de carregamento do HTML para suavizar a transição
+const SplashScreen = () => (
+  <div className="fixed inset-0 bg-gradient-to-b from-[#ff7e5f] to-[#1e1b4b] flex flex-col items-center justify-center z-50 animate-fadeIn">
+    <div className="relative flex flex-col items-center">
+      <img
+        src="/icon.jpg"
+        alt="Loading"
+        className="w-[150px] h-[150px] rounded-[30px] shadow-2xl animate-pulse"
+      />
+      <div className="mt-5 text-white/80 font-bold tracking-[2px] uppercase text-sm">
+        Carregando o rolê...
+      </div>
+    </div>
+  </div>
+);
 
 // ==================================================================
 // LISTA DE CARTAS
@@ -118,7 +133,7 @@ const CARD_TEMPLATES = [
   "Quem estiver com a bateria do celular abaixo de 20% bebe.",
 ];
 
-// Componente decorativo para as linhas douradas da carta
+// Elementos decorativos dourados da carta
 const GoldLines = () => (
   <>
     <div className="absolute top-0 left-0 w-32 h-32 border-l-2 border-t-2 border-yellow-500/40 rounded-tl-3xl opacity-60 pointer-events-none" />
@@ -170,13 +185,26 @@ export default function PraiaGame() {
   const [showConfirmStop, setShowConfirmStop] = useState(false);
   const [newVersionAvailable, setNewVersionAvailable] = useState(false);
 
-  // --- AUTENTICAÇÃO ---
+  // EFEITO: Remover Splash Screen do HTML quando o React carregar
+  useEffect(() => {
+    const splash = document.getElementById("splash-screen");
+    if (splash) {
+      // Fade out suave
+      splash.style.opacity = "0";
+      // Remove do DOM após a transição
+      setTimeout(() => splash.remove(), 500);
+    }
+  }, []);
+
+  // EFEITO: Autenticação
   useEffect(() => {
     if (!isConfigured || !auth) return;
     signInAnonymously(auth).catch((err: any) =>
       console.error("Erro auth:", err)
     );
     const unsubscribeAuth = onAuthStateChanged(auth, (u: any) => setUser(u));
+
+    // Verificar atualizações PWA
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.addEventListener("controllerchange", () =>
         setNewVersionAvailable(true)
@@ -185,15 +213,17 @@ export default function PraiaGame() {
     return () => unsubscribeAuth();
   }, []);
 
-  // --- ESCUTAR DADOS ---
+  // EFEITO: Escutar dados do Jogo (Firestore)
   useEffect(() => {
     if (!user || !db || !isConfigured) return;
     const gameDocRef = doc(db, "praia2026", "session_01");
+
     const unsubscribe = onSnapshot(
       gameDocRef,
       (docSnap: any) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
+          // Verificar inatividade > 30 min
           if (data.lastAction) {
             const lastActionTime = data.lastAction.toMillis
               ? data.lastAction.toMillis()
@@ -208,6 +238,7 @@ export default function PraiaGame() {
           }
           setGameData(data);
         } else {
+          // Criar sala se não existir
           setDoc(gameDocRef, {
             status: "LOBBY",
             players: [],
@@ -224,10 +255,11 @@ export default function PraiaGame() {
         setLoading(false);
       }
     );
+
     return () => unsubscribe();
   }, [user]);
 
-  // --- AÇÕES ---
+  // FUNÇÕES DO JOGO
   const resetGameDueToInactivity = async () => {
     if (!db) return;
     await setDoc(doc(db, "praia2026", "session_01"), {
@@ -238,7 +270,7 @@ export default function PraiaGame() {
       hostId: null,
       lastAction: serverTimestamp(),
     });
-    alert("Reiniciado por inatividade.");
+    alert("O jogo foi reiniciado por inatividade.");
   };
 
   const addPlayerLocally = () => {
@@ -253,7 +285,7 @@ export default function PraiaGame() {
     await updateDoc(doc(db, "praia2026", "session_01"), {
       status: "PLAYING",
       players: tempPlayers,
-      turnIndex: 0, // Inicia com o primeiro da lista
+      turnIndex: 0,
       hostId: user.uid,
       currentCard: { text: "Toque na carta para começar!", type: "info" },
       lastAction: serverTimestamp(),
@@ -262,19 +294,19 @@ export default function PraiaGame() {
 
   const drawCard = async () => {
     if (!gameData || !user || !db) return;
+    // Só o host pode puxar (opcional, mas evita bagunça)
     if (gameData.hostId && gameData.hostId !== user.uid) return;
 
     const randomIndex = Math.floor(Math.random() * CARD_TEMPLATES.length);
     let cardText = CARD_TEMPLATES[randomIndex];
 
-    // Substitui {player} por um aleatório
     if (cardText.includes("{player}") && gameData.players.length > 0) {
       const randomPlayer =
         gameData.players[Math.floor(Math.random() * gameData.players.length)];
       cardText = cardText.replace("{player}", randomPlayer);
     }
 
-    // Calcula o próximo turno (Circular)
+    // Passa a vez para o próximo
     const nextTurnIndex = (gameData.turnIndex + 1) % gameData.players.length;
 
     await updateDoc(doc(db, "praia2026", "session_01"), {
@@ -300,19 +332,16 @@ export default function PraiaGame() {
 
   const reloadPage = () => window.location.reload();
 
-  // --- RENDERIZAÇÃO ---
+  // RENDERIZAÇÃO
   if (!isConfigured)
     return (
       <div className="p-10 text-white bg-gray-900">
-        Configure as chaves no código!
+        Configure as chaves do Firebase no código!
       </div>
     );
-  if (loading)
-    return (
-      <div className="min-h-screen bg-indigo-900 flex items-center justify-center">
-        <RefreshCw className="animate-spin text-yellow-500" size={40} />
-      </div>
-    );
+
+  // Se estiver carregando, mostra a Splash Screen
+  if (loading) return <SplashScreen />;
 
   const isHost = gameData?.hostId === user?.uid;
   const currentPlayerName =
@@ -320,7 +349,7 @@ export default function PraiaGame() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1a1b4b] to-[#2e1065] font-sans text-gray-100 overflow-hidden relative selection:bg-yellow-500 selection:text-indigo-900">
-      {/* Background Decorativo (Fillers) */}
+      {/* Background Decorativo */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[100px]" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-600/20 rounded-full blur-[100px]" />
@@ -343,7 +372,7 @@ export default function PraiaGame() {
       )}
 
       {/* HEADER */}
-      <header className="p-6 flex justify-between items-center relative z-10">
+      <header className="p-6 flex justify-between items-center relative z-10 pt-safe-top">
         <div className="flex flex-col">
           <h1 className="text-2xl font-serif text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-yellow-500 font-bold tracking-widest drop-shadow-sm">
             PRAIA 2026
@@ -360,9 +389,8 @@ export default function PraiaGame() {
       </header>
 
       {/* MAIN CONTENT */}
-      <main className="container mx-auto px-4 py-2 max-w-md h-[calc(100vh-100px)] flex flex-col relative z-10">
+      <main className="container mx-auto px-4 py-2 max-w-md h-[calc(100vh-100px)] flex flex-col relative z-10 pb-safe-bottom">
         {gameData?.status === "LOBBY" ? (
-          // === LOBBY ===
           <div className="flex-1 flex flex-col justify-center animate-fadeIn">
             <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[2rem] shadow-2xl border border-white/10">
               <div className="text-center mb-8">
@@ -427,9 +455,8 @@ export default function PraiaGame() {
             </div>
           </div>
         ) : (
-          // === JOGO ===
           <div className="flex-1 flex flex-col animate-fadeIn">
-            {/* INDICADOR DE QUEM É A VEZ (TOPO DA CARTA) */}
+            {/* Indicador de Vez */}
             <div className="flex justify-center mb-6">
               <div className="bg-black/30 backdrop-blur-md px-6 py-2 rounded-full border border-white/10 flex items-center gap-3">
                 <span className="text-xs text-indigo-300 uppercase tracking-widest">
@@ -444,10 +471,9 @@ export default function PraiaGame() {
               </div>
             </div>
 
-            {/* ÁREA DA CARTA */}
+            {/* Carta */}
             <div className="flex-1 flex flex-col items-center justify-center relative perspective-1000">
               <div className="relative w-full max-w-[340px] aspect-[3/4]">
-                {/* CARTA */}
                 <div
                   onClick={drawCard}
                   className={`
@@ -463,10 +489,8 @@ export default function PraiaGame() {
                       }
                     `}
                 >
-                  {/* Elementos Dourados (Bordas) */}
                   <GoldLines />
 
-                  {/* Conteúdo Interno */}
                   <div className="flex-1 w-full flex flex-col items-center justify-center relative z-10">
                     {!gameData.currentCard ? (
                       <div className="opacity-40 flex flex-col items-center gap-4">
@@ -479,20 +503,17 @@ export default function PraiaGame() {
                       </div>
                     ) : (
                       <div className="animate-popIn flex flex-col h-full justify-between py-4">
-                        {/* Ícone Decorativo */}
                         <div className="flex justify-center gap-4 text-yellow-500/80 mb-4">
                           <Mic size={24} strokeWidth={1.5} />
                           <Wine size={24} strokeWidth={1.5} />
                         </div>
 
-                        {/* Texto Principal */}
                         <div className="flex-1 flex items-center justify-center">
                           <p className="text-2xl md:text-3xl font-serif text-white leading-relaxed drop-shadow-md">
                             {gameData.currentCard.text}
                           </p>
                         </div>
 
-                        {/* Rodapé da Carta */}
                         <div className="mt-6 border-t border-white/10 pt-6 w-full flex flex-col gap-2">
                           <div className="flex justify-center items-center gap-2 text-indigo-300 text-sm">
                             <span>Vez de:</span>
@@ -508,7 +529,6 @@ export default function PraiaGame() {
                     )}
                   </div>
 
-                  {/* Botão do Mestre */}
                   {isHost && (
                     <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-teal-500 to-teal-400/90 py-3 flex items-center justify-center gap-2 text-white font-bold text-xs uppercase tracking-widest shadow-[0_-10px_20px_rgba(0,0,0,0.2)]">
                       <Crown size={14} fill="currentColor" /> Você é o Mestre
@@ -518,7 +538,7 @@ export default function PraiaGame() {
               </div>
             </div>
 
-            {/* LISTA DE JOGADORES (MINI) */}
+            {/* Lista de Jogadores Mini */}
             <div className="mt-8 mb-4">
               <div className="flex flex-wrap justify-center gap-2 opacity-70">
                 {gameData.players.map((p: any, i: number) => (
@@ -539,7 +559,6 @@ export default function PraiaGame() {
               </div>
             </div>
 
-            {/* BOTÃO PARAR (SÓ HOST) */}
             {isHost && (
               <div className="flex justify-center pb-6">
                 <button
@@ -563,12 +582,11 @@ export default function PraiaGame() {
         )}
       </main>
 
-      {/* CONFIRMAÇÃO */}
+      {/* Confirmação de Parar */}
       {showConfirmStop && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-fadeIn">
           <div className="bg-[#1e1b4b] border border-white/10 rounded-3xl p-8 max-w-xs w-full shadow-2xl text-center relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-red-500/10 to-transparent pointer-events-none" />
-
             <div className="w-14 h-14 bg-red-500/20 rounded-full flex items-center justify-center text-red-500 mb-4 mx-auto border border-red-500/30">
               <AlertTriangle size={28} />
             </div>
@@ -602,6 +620,8 @@ export default function PraiaGame() {
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { bg: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        .pt-safe-top { padding-top: env(safe-area-inset-top); }
+        .pb-safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
       `}</style>
     </div>
   );
