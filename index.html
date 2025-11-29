@@ -2,7 +2,12 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/jpeg" href="/icon.jpg" />
+
+    <!-- ÍCONES CORRIGIDOS PARA GITHUB PAGES -->
+    <!-- O ponto (.) antes da barra é crucial para subpastas -->
+    <link rel="icon" type="image/jpeg" href="./icon.jpg" />
+    <link rel="apple-touch-icon" href="./icon.jpg" />
+
     <!-- Viewport configurado para cobrir toda a tela (sem bordas brancas) -->
     <meta
       name="viewport"
@@ -18,7 +23,8 @@
     />
     <meta name="apple-mobile-web-app-title" content="Praia 2026" />
 
-    <link rel="manifest" href="/manifest.json" />
+    <!-- MANIFESTO TAMBÉM COM CAMINHO RELATIVO -->
+    <link rel="manifest" href="./manifest.json" />
     <title>Praia 2026: O Jogo</title>
 
     <!-- Estilo da Splash Screen (Carregamento Inicial) -->
@@ -127,9 +133,9 @@
     <!-- O HTML da Splash Screen aparece imediatamente -->
     <div id="splash-screen">
       <div class="logo-container">
-        <!-- onerror garante que não fique ícone quebrado se a imagem falhar -->
+        <!-- Caminho relativo ./icon.jpg garante que ache a imagem na subpasta -->
         <img
-          src="/icon.jpg"
+          src="./icon.jpg"
           class="splash-icon"
           alt="Praia 2026"
           onerror="this.style.display='none'"
@@ -143,8 +149,7 @@
     <script type="module" src="/src/main.tsx"></script>
 
     <script>
-      // Fallback de segurança: Se o React não carregar em 5s, remove a tela de loading
-      // para não travar o usuário numa tela eterna.
+      // Fallback de segurança: Se o React não carregar em 8s, remove a tela de loading
       window.onload = function () {
         setTimeout(() => {
           const splash = document.getElementById("splash-screen");

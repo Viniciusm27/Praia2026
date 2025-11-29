@@ -3,12 +3,14 @@
   "name": "Praia 2026: O Jogo",
   "icons": [
     {
-      "src": "/icon.jpg",
+      "src": "./icon.jpg",
       "type": "image/jpeg",
       "sizes": "512x512"
     }
   ],
-  "start_url": "/",
+  "id": "/praia-2026/",
+  "start_url": "/praia-2026/",
+  "scope": "/praia-2026/",
   "display": "standalone",
   "theme_color": "#1e1b4b",
   "background_color": "#ff7e5f",
