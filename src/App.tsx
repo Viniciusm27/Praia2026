@@ -35,7 +35,6 @@ const firebaseConfig = {
 
 const isConfigured = firebaseConfig.apiKey.length > 0;
 
-// Variáveis globais para evitar recriação
 let app: any;
 let auth: any;
 let db: any;
@@ -53,21 +52,59 @@ if (isConfigured) {
 }
 
 // ==================================================================
-// COMPONENTE DE SPLASH SCREEN (CARREGAMENTO)
+// COMPONENTE SPLASH SCREEN (DESIGN SINCRONIZADO COM HTML)
 // ==================================================================
-// Este componente imita a tela de carregamento do HTML para suavizar a transição
 const SplashScreen = () => (
-  <div className="fixed inset-0 bg-gradient-to-b from-[#ff7e5f] to-[#1e1b4b] flex flex-col items-center justify-center z-50 animate-fadeIn">
-    <div className="relative flex flex-col items-center">
+  <div
+    className="fixed inset-0 z-[99999] flex flex-col items-center justify-center pointer-events-none"
+    style={{
+      background:
+        "radial-gradient(circle at center top, #ff8c69 0%, #2e1065 70%, #100c30 100%)",
+      transition: "opacity 0.6s ease-out",
+    }}
+  >
+    {/* Container da Logo com animação de flutuar */}
+    <div
+      className="relative w-[160px] h-[160px] rounded-[35px] overflow-hidden bg-black"
+      style={{
+        boxShadow:
+          "0 0 0 4px rgba(255, 255, 255, 0.1), 0 20px 50px rgba(0,0,0,0.5)",
+        animation: "float 4s ease-in-out infinite",
+      }}
+    >
       <img
         src="/icon.jpg"
         alt="Loading"
-        className="w-[150px] h-[150px] rounded-[30px] shadow-2xl animate-pulse"
+        className="w-full h-full object-cover"
+        onError={(e) => (e.currentTarget.style.display = "none")}
       />
-      <div className="mt-5 text-white/80 font-bold tracking-[2px] uppercase text-sm">
-        Carregando o rolê...
-      </div>
     </div>
+
+    {/* Loader igual ao do HTML */}
+    <div className="mt-10 w-10 h-10 border-4 border-white/20 border-t-[#fbbf24] rounded-full animate-spin" />
+
+    {/* Texto pulsante */}
+    <div
+      className="mt-5 text-white/90 text-xs font-bold tracking-[3px] uppercase"
+      style={{
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+        animation: "pulseText 2s infinite",
+      }}
+    >
+      Carregando o rolê...
+    </div>
+
+    {/* Definição das animações locais para garantir igualdade */}
+    <style>{`
+      @keyframes float {
+        0%, 100% { transform: translateY(0px) scale(1); }
+        50% { transform: translateY(-10px) scale(1.02); }
+      }
+      @keyframes pulseText { 
+        0%, 100% { opacity: 0.6; } 
+        50% { opacity: 1; } 
+      }
+    `}</style>
   </div>
 );
 
@@ -133,7 +170,6 @@ const CARD_TEMPLATES = [
   "Quem estiver com a bateria do celular abaixo de 20% bebe.",
 ];
 
-// Elementos decorativos dourados da carta
 const GoldLines = () => (
   <>
     <div className="absolute top-0 left-0 w-32 h-32 border-l-2 border-t-2 border-yellow-500/40 rounded-tl-3xl opacity-60 pointer-events-none" />
@@ -187,24 +223,22 @@ export default function PraiaGame() {
 
   // EFEITO: Remover Splash Screen do HTML quando o React carregar
   useEffect(() => {
-    const splash = document.getElementById("splash-screen");
-    if (splash) {
-      // Fade out suave
-      splash.style.opacity = "0";
-      // Remove do DOM após a transição
-      setTimeout(() => splash.remove(), 500);
-    }
+    // Pequeno delay para garantir que o React renderizou o background
+    setTimeout(() => {
+      const splash = document.getElementById("splash-screen");
+      if (splash) {
+        splash.style.opacity = "0";
+        setTimeout(() => splash.remove(), 600);
+      }
+    }, 100);
   }, []);
 
-  // EFEITO: Autenticação
   useEffect(() => {
     if (!isConfigured || !auth) return;
     signInAnonymously(auth).catch((err: any) =>
       console.error("Erro auth:", err)
     );
     const unsubscribeAuth = onAuthStateChanged(auth, (u: any) => setUser(u));
-
-    // Verificar atualizações PWA
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.addEventListener("controllerchange", () =>
         setNewVersionAvailable(true)
@@ -213,17 +247,14 @@ export default function PraiaGame() {
     return () => unsubscribeAuth();
   }, []);
 
-  // EFEITO: Escutar dados do Jogo (Firestore)
   useEffect(() => {
     if (!user || !db || !isConfigured) return;
     const gameDocRef = doc(db, "praia2026", "session_01");
-
     const unsubscribe = onSnapshot(
       gameDocRef,
       (docSnap: any) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
-          // Verificar inatividade > 30 min
           if (data.lastAction) {
             const lastActionTime = data.lastAction.toMillis
               ? data.lastAction.toMillis()
@@ -238,7 +269,6 @@ export default function PraiaGame() {
           }
           setGameData(data);
         } else {
-          // Criar sala se não existir
           setDoc(gameDocRef, {
             status: "LOBBY",
             players: [],
@@ -255,11 +285,9 @@ export default function PraiaGame() {
         setLoading(false);
       }
     );
-
     return () => unsubscribe();
   }, [user]);
 
-  // FUNÇÕES DO JOGO
   const resetGameDueToInactivity = async () => {
     if (!db) return;
     await setDoc(doc(db, "praia2026", "session_01"), {
@@ -270,7 +298,7 @@ export default function PraiaGame() {
       hostId: null,
       lastAction: serverTimestamp(),
     });
-    alert("O jogo foi reiniciado por inatividade.");
+    alert("Reiniciado por inatividade.");
   };
 
   const addPlayerLocally = () => {
@@ -294,7 +322,6 @@ export default function PraiaGame() {
 
   const drawCard = async () => {
     if (!gameData || !user || !db) return;
-    // Só o host pode puxar (opcional, mas evita bagunça)
     if (gameData.hostId && gameData.hostId !== user.uid) return;
 
     const randomIndex = Math.floor(Math.random() * CARD_TEMPLATES.length);
@@ -305,8 +332,6 @@ export default function PraiaGame() {
         gameData.players[Math.floor(Math.random() * gameData.players.length)];
       cardText = cardText.replace("{player}", randomPlayer);
     }
-
-    // Passa a vez para o próximo
     const nextTurnIndex = (gameData.turnIndex + 1) % gameData.players.length;
 
     await updateDoc(doc(db, "praia2026", "session_01"), {
@@ -332,15 +357,14 @@ export default function PraiaGame() {
 
   const reloadPage = () => window.location.reload();
 
-  // RENDERIZAÇÃO
   if (!isConfigured)
     return (
       <div className="p-10 text-white bg-gray-900">
-        Configure as chaves do Firebase no código!
+        Configure as chaves no código!
       </div>
     );
 
-  // Se estiver carregando, mostra a Splash Screen
+  // Se ainda estiver carregando (Auth ou Firebase), mantemos a Splash Screen do React
   if (loading) return <SplashScreen />;
 
   const isHost = gameData?.hostId === user?.uid;
@@ -456,7 +480,6 @@ export default function PraiaGame() {
           </div>
         ) : (
           <div className="flex-1 flex flex-col animate-fadeIn">
-            {/* Indicador de Vez */}
             <div className="flex justify-center mb-6">
               <div className="bg-black/30 backdrop-blur-md px-6 py-2 rounded-full border border-white/10 flex items-center gap-3">
                 <span className="text-xs text-indigo-300 uppercase tracking-widest">
@@ -471,7 +494,6 @@ export default function PraiaGame() {
               </div>
             </div>
 
-            {/* Carta */}
             <div className="flex-1 flex flex-col items-center justify-center relative perspective-1000">
               <div className="relative w-full max-w-[340px] aspect-[3/4]">
                 <div
@@ -538,7 +560,6 @@ export default function PraiaGame() {
               </div>
             </div>
 
-            {/* Lista de Jogadores Mini */}
             <div className="mt-8 mb-4">
               <div className="flex flex-wrap justify-center gap-2 opacity-70">
                 {gameData.players.map((p: any, i: number) => (
@@ -582,11 +603,11 @@ export default function PraiaGame() {
         )}
       </main>
 
-      {/* Confirmação de Parar */}
       {showConfirmStop && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-fadeIn">
           <div className="bg-[#1e1b4b] border border-white/10 rounded-3xl p-8 max-w-xs w-full shadow-2xl text-center relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-red-500/10 to-transparent pointer-events-none" />
+
             <div className="w-14 h-14 bg-red-500/20 rounded-full flex items-center justify-center text-red-500 mb-4 mx-auto border border-red-500/30">
               <AlertTriangle size={28} />
             </div>
