@@ -52,63 +52,6 @@ if (isConfigured) {
 }
 
 // ==================================================================
-// COMPONENTE SPLASH SCREEN (DESIGN SINCRONIZADO COM HTML)
-// ==================================================================
-const SplashScreen = () => (
-  <div
-    className="fixed inset-0 z-[99999] flex flex-col items-center justify-center pointer-events-none"
-    style={{
-      background:
-        "radial-gradient(circle at center top, #ff8c69 0%, #2e1065 70%, #100c30 100%)",
-      transition: "opacity 0.6s ease-out",
-    }}
-  >
-    {/* Container da Logo com animação de flutuar */}
-    <div
-      className="relative w-[160px] h-[160px] rounded-[35px] overflow-hidden bg-black"
-      style={{
-        boxShadow:
-          "0 0 0 4px rgba(255, 255, 255, 0.1), 0 20px 50px rgba(0,0,0,0.5)",
-        animation: "float 4s ease-in-out infinite",
-      }}
-    >
-      <img
-        src="/icon.jpg"
-        alt="Loading"
-        className="w-full h-full object-cover"
-        onError={(e) => (e.currentTarget.style.display = "none")}
-      />
-    </div>
-
-    {/* Loader igual ao do HTML */}
-    <div className="mt-10 w-10 h-10 border-4 border-white/20 border-t-[#fbbf24] rounded-full animate-spin" />
-
-    {/* Texto pulsante */}
-    <div
-      className="mt-5 text-white/90 text-xs font-bold tracking-[3px] uppercase"
-      style={{
-        fontFamily: "'Segoe UI', system-ui, sans-serif",
-        animation: "pulseText 2s infinite",
-      }}
-    >
-      Carregando o rolê...
-    </div>
-
-    {/* Definição das animações locais para garantir igualdade */}
-    <style>{`
-      @keyframes float {
-        0%, 100% { transform: translateY(0px) scale(1); }
-        50% { transform: translateY(-10px) scale(1.02); }
-      }
-      @keyframes pulseText { 
-        0%, 100% { opacity: 0.6; } 
-        50% { opacity: 1; } 
-      }
-    `}</style>
-  </div>
-);
-
-// ==================================================================
 // LISTA DE CARTAS
 // ==================================================================
 const CARD_TEMPLATES = [
@@ -170,6 +113,7 @@ const CARD_TEMPLATES = [
   "Quem estiver com a bateria do celular abaixo de 20% bebe.",
 ];
 
+// Elementos decorativos dourados da carta
 const GoldLines = () => (
   <>
     <div className="absolute top-0 left-0 w-32 h-32 border-l-2 border-t-2 border-yellow-500/40 rounded-tl-3xl opacity-60 pointer-events-none" />
@@ -220,18 +164,6 @@ export default function PraiaGame() {
   const [tempPlayers, setTempPlayers] = useState<string[]>([]);
   const [showConfirmStop, setShowConfirmStop] = useState(false);
   const [newVersionAvailable, setNewVersionAvailable] = useState(false);
-
-  // EFEITO: Remover Splash Screen do HTML quando o React carregar
-  useEffect(() => {
-    // Pequeno delay para garantir que o React renderizou o background
-    setTimeout(() => {
-      const splash = document.getElementById("splash-screen");
-      if (splash) {
-        splash.style.opacity = "0";
-        setTimeout(() => splash.remove(), 600);
-      }
-    }, 100);
-  }, []);
 
   useEffect(() => {
     if (!isConfigured || !auth) return;
@@ -364,8 +296,17 @@ export default function PraiaGame() {
       </div>
     );
 
-  // Se ainda estiver carregando (Auth ou Firebase), mantemos a Splash Screen do React
-  if (loading) return <SplashScreen />;
+  // TELA DE CARREGAMENTO SIMPLES (Evita erro de imagem quebrada)
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#1e1b4b] flex flex-col items-center justify-center">
+        <RefreshCw className="animate-spin text-yellow-500 mb-4" size={40} />
+        <p className="text-white/60 text-xs tracking-[0.2em] font-bold uppercase animate-pulse">
+          Carregando...
+        </p>
+      </div>
+    );
+  }
 
   const isHost = gameData?.hostId === user?.uid;
   const currentPlayerName =
@@ -480,6 +421,7 @@ export default function PraiaGame() {
           </div>
         ) : (
           <div className="flex-1 flex flex-col animate-fadeIn">
+            {/* Indicador de Vez */}
             <div className="flex justify-center mb-6">
               <div className="bg-black/30 backdrop-blur-md px-6 py-2 rounded-full border border-white/10 flex items-center gap-3">
                 <span className="text-xs text-indigo-300 uppercase tracking-widest">
@@ -494,6 +436,7 @@ export default function PraiaGame() {
               </div>
             </div>
 
+            {/* Carta */}
             <div className="flex-1 flex flex-col items-center justify-center relative perspective-1000">
               <div className="relative w-full max-w-[340px] aspect-[3/4]">
                 <div
@@ -607,7 +550,6 @@ export default function PraiaGame() {
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-fadeIn">
           <div className="bg-[#1e1b4b] border border-white/10 rounded-3xl p-8 max-w-xs w-full shadow-2xl text-center relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-red-500/10 to-transparent pointer-events-none" />
-
             <div className="w-14 h-14 bg-red-500/20 rounded-full flex items-center justify-center text-red-500 mb-4 mx-auto border border-red-500/30">
               <AlertTriangle size={28} />
             </div>
