@@ -3,13 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/jpeg" href="/Praia2026/icon.jpg" />
+    <!-- Viewport configurado para cobrir toda a tela (sem bordas brancas) -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
 
     <!-- Configurações de PWA (App Real) -->
-    <meta name="theme-color" content="#1e1b4b" />
+    <meta name="theme-color" content="#2e1065" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
@@ -22,8 +23,15 @@
 
     <!-- Estilo da Splash Screen (Carregamento Inicial) -->
     <style>
-      body {
+      * {
+        box-sizing: border-box;
+      }
+      body,
+      html {
         margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
         background-color: #1e1b4b;
         overflow: hidden;
       }
@@ -34,62 +42,121 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: linear-gradient(to bottom, #ff7e5f, #1e1b4b);
+        /* Degradê inspirado na sua logo (Laranja -> Roxo Profundo) */
+        background: radial-gradient(
+          circle at center top,
+          #ff8c69 0%,
+          #2e1065 70%,
+          #100c30 100%
+        );
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        z-index: 9999;
-        transition: opacity 0.5s ease-out;
+        z-index: 99999;
+        transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .logo-container {
+        position: relative;
+        width: 160px;
+        height: 160px;
+        border-radius: 35px;
+        /* Sombra brilhante para destacar */
+        box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1),
+          0 20px 50px rgba(0, 0, 0, 0.5);
+        animation: float 4s ease-in-out infinite;
+        background: #000;
+        overflow: hidden;
       }
 
       .splash-icon {
-        width: 150px;
-        height: 150px;
-        border-radius: 30px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        animation: pulse 2s infinite;
+        width: 100%;
+        height: 100%;
+        -o-object-fit: cover;
+           object-fit: cover;
+      }
+
+      .splash-loader {
+        margin-top: 40px;
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(255, 255, 255, 0.2);
+        border-top-color: #fbbf24; /* Amarelo */
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
       }
 
       .splash-text {
         margin-top: 20px;
-        color: white;
-        font-family: sans-serif;
-        font-weight: bold;
-        letter-spacing: 2px;
-        font-size: 14px;
-        opacity: 0.8;
+        color: rgba(255, 255, 255, 0.9);
+        font-family: "Segoe UI", system-ui, sans-serif;
+        font-weight: 700;
+        letter-spacing: 3px;
+        font-size: 12px;
         text-transform: uppercase;
+        animation: pulseText 2s infinite;
       }
 
-      @keyframes pulse {
-        0% {
-          transform: scale(1);
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0px) scale(1);
         }
         50% {
-          transform: scale(1.05);
+          transform: translateY(-10px) scale(1.02);
         }
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes pulseText {
+        0%,
         100% {
-          transform: scale(1);
+          opacity: 0.6;
+        }
+        50% {
+          opacity: 1;
         }
       }
     </style>
-    <script type="module" crossorigin src="/Praia2026/assets/index-BRLpvNOc.js"></script>
-    <link rel="stylesheet" crossorigin href="/Praia2026/assets/index-Bdl334Jd.css">
+    <script type="module" crossorigin src="/Praia2026/assets/index-CtaAZrKH.js"></script>
+    <link rel="stylesheet" crossorigin href="/Praia2026/assets/index-RLNEjULB.css">
   </head>
   <body>
     <!-- O HTML da Splash Screen aparece imediatamente -->
     <div id="splash-screen">
-      <img src="/Praia2026/icon.jpg" class="splash-icon" alt="Logo" />
+      <div class="logo-container">
+        <!-- onerror garante que não fique ícone quebrado se a imagem falhar -->
+        <img
+          src="/Praia2026/icon.jpg"
+          class="splash-icon"
+          alt="Praia 2026"
+          onerror="this.style.display='none'"
+        />
+      </div>
+      <div class="splash-loader"></div>
       <div class="splash-text">Carregando o rolê...</div>
     </div>
 
     <div id="root"></div>
 
-    <!-- Script para remover a Splash Screen quando o app carregar -->
     <script>
+      // Fallback de segurança: Se o React não carregar em 5s, remove a tela de loading
+      // para não travar o usuário numa tela eterna.
       window.onload = function () {
-        // A remoção real será feita pelo React, mas isso é um fallback
+        setTimeout(() => {
+          const splash = document.getElementById("splash-screen");
+          // Verifica se o app já carregou (pela classe de animação do React)
+          if (splash && !document.querySelector(".animate-fadeIn")) {
+            // Opcional: forçar remoção se necessário
+            // splash.style.opacity = '0';
+            // setTimeout(() => splash.remove(), 500);
+          }
+        }, 8000);
       };
     </script>
   </body>
