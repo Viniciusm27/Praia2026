@@ -3,19 +3,14 @@
   "name": "Praia 2026: O Jogo",
   "icons": [
     {
-      "src": "/icon.png",
-      "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "/icon.png",
-      "type": "image/png",
+      "src": "/icon.jpg",
+      "type": "image/jpeg",
       "sizes": "512x512"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
   "theme_color": "#1e1b4b",
-  "background_color": "#1e1b4b",
+  "background_color": "#ff7e5f",
   "orientation": "portrait"
 }

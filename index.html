@@ -1,16 +1,96 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/Praia2026/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>praia-2026</title>
+    <link rel="icon" type="image/jpeg" href="/Praia2026/icon.jpg" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+
+    <!-- Configurações de PWA (App Real) -->
+    <meta name="theme-color" content="#1e1b4b" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Praia 2026" />
 
     <link rel="manifest" href="/Praia2026/manifest.json" />
-    <script type="module" crossorigin src="/Praia2026/assets/index-BN5UjsqZ.js"></script>
-    <link rel="stylesheet" crossorigin href="/Praia2026/assets/index-ZRcP55F_.css">
+    <title>Praia 2026: O Jogo</title>
+
+    <!-- Estilo da Splash Screen (Carregamento Inicial) -->
+    <style>
+      body {
+        margin: 0;
+        background-color: #1e1b4b;
+        overflow: hidden;
+      }
+
+      #splash-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to bottom, #ff7e5f, #1e1b4b);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease-out;
+      }
+
+      .splash-icon {
+        width: 150px;
+        height: 150px;
+        border-radius: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        animation: pulse 2s infinite;
+      }
+
+      .splash-text {
+        margin-top: 20px;
+        color: white;
+        font-family: sans-serif;
+        font-weight: bold;
+        letter-spacing: 2px;
+        font-size: 14px;
+        opacity: 0.8;
+        text-transform: uppercase;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+    </style>
+    <script type="module" crossorigin src="/Praia2026/assets/index-BRLpvNOc.js"></script>
+    <link rel="stylesheet" crossorigin href="/Praia2026/assets/index-Bdl334Jd.css">
   </head>
   <body>
+    <!-- O HTML da Splash Screen aparece imediatamente -->
+    <div id="splash-screen">
+      <img src="/Praia2026/icon.jpg" class="splash-icon" alt="Logo" />
+      <div class="splash-text">Carregando o rolê...</div>
+    </div>
+
     <div id="root"></div>
+
+    <!-- Script para remover a Splash Screen quando o app carregar -->
+    <script>
+      window.onload = function () {
+        // A remoção real será feita pelo React, mas isso é um fallback
+      };
+    </script>
   </body>
 </html>
